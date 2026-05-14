@@ -4,34 +4,31 @@ import joblib
 
 app = Flask(__name__)
 
+# LOAD MODEL
 model = joblib.load("career_model.joblib")
 
-data = pd.read_excel("Logical_Career_Dataset.csv (1).xlsx")
+# LOAD DATASET
+df = pd.read_excel("Logical_Career_Dataset.csv (1).xlsx")
 
-data.columns = (
-    data.columns
+# CLEAN COLUMN NAMES
+df.columns = (
+    df.columns
     .str.strip()
     .str.lower()
     .str.replace(" ", "_")
 )
 
-education_options = sorted(
-    data["education_level"].dropna().unique()
-)
+# DROPDOWN OPTIONS
+education_options = sorted(df["education_level"].dropna().unique())
 
-specialization_options = sorted(
-    data["specialization"].dropna().unique()
-)
+specialization_options = sorted(df["specialization"].dropna().unique())
 
-skills_options = sorted(
-    data["skills"].dropna().unique()
-)
+skills_options = sorted(df["skills"].dropna().unique())
 
-certification_options = sorted(
-    data["certifications"].dropna().unique()
-)
+certification_options = sorted(df["certifications"].dropna().unique())
 
 
+# HOME PAGE
 @app.route("/")
 def home():
 
@@ -44,43 +41,40 @@ def home():
     )
 
 
-@app.route('/predict', methods=['GET', 'POST'])
+# PREDICTION ROUTE
+@app.route("/predict", methods=["POST"])
 def predict():
 
-    if request.method == 'POST':
+    education = request.form["education"]
+    specialization = request.form["specialization"]
+    skills = request.form["skills"]
+    certifications = request.form["certifications"]
 
-        education = request.form['education']
-        specialization = request.form['specialization']
-        skills = request.form['skills']
-        certifications = request.form['certifications']
-        cgpa = request.form['cgpa']
+    # FIXED CGPA TYPE
+    cgpa = float(request.form["cgpa"])
 
-        data = pd.DataFrame({
-            'education_level': [education],
-            'specialization': [specialization],
-            'skills': [skills],
-            'certifications': [certifications],
-            'cgpa/percentage': [cgpa]
-        })
+    # CREATE INPUT DATAFRAME
+    input_data = pd.DataFrame({
+        "education_level": [education],
+        "specialization": [specialization],
+        "skills": [skills],
+        "certifications": [certifications],
+        "cgpa/percentage": [cgpa]
+    })
 
-        result = model.predict(data)[0]
-
-        return render_template(
-            'index.html',
-            prediction=result,
-            education_list=education_list,
-            specialization_list=specialization_list,
-            skills_list=skills_list,
-            certifications_list=certifications_list
-        )
+    # PREDICT
+    result = model.predict(input_data)[0]
 
     return render_template(
-        'index.html',
-        education_list=education_list,
-        specialization_list=specialization_list,
-        skills_list=skills_list,
-        certifications_list=certifications_list
+        "index.html",
+        prediction=result,
+        education_list=education_options,
+        specialization_list=specialization_options,
+        skills_list=skills_options,
+        certifications_list=certification_options
     )
 
+
+# RUN APP
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
