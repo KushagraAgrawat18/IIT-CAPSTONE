@@ -44,30 +44,43 @@ def home():
     )
 
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['GET', 'POST'])
 def predict():
 
-    form_data = {
-        "education_level": request.form.get("education"),
-        "specialization": request.form.get("specialization"),
-        "skills": request.form.get("skills"),
-        "certifications": request.form.get("certifications"),
-        "cgpa/percentage": float(request.form.get("cgpa"))
-    }
+    if request.method == 'POST':
 
-    input_df = pd.DataFrame([form_data])
+        education = request.form['education']
+        specialization = request.form['specialization']
+        skills = request.form['skills']
+        certifications = request.form['certifications']
+        cgpa = request.form['cgpa']
 
-    prediction = model.predict(input_df)[0]
+        data = pd.DataFrame({
+            'education_level': [education],
+            'specialization': [specialization],
+            'skills': [skills],
+            'certifications': [certifications],
+            'cgpa/percentage': [cgpa]
+        })
+
+        result = model.predict(data)[0]
+
+        return render_template(
+            'index.html',
+            prediction=result,
+            education_list=education_list,
+            specialization_list=specialization_list,
+            skills_list=skills_list,
+            certifications_list=certifications_list
+        )
 
     return render_template(
-        "index.html",
-        prediction=prediction,
-        education_list=education_options,
-        specialization_list=specialization_options,
-        skills_list=skills_options,
-        certifications_list=certification_options
+        'index.html',
+        education_list=education_list,
+        specialization_list=specialization_list,
+        skills_list=skills_list,
+        certifications_list=certifications_list
     )
-
 
 if __name__ == "__main__":
     app.run()
